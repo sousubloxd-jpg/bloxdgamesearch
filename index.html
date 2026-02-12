@@ -12,24 +12,24 @@
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Connecting to Bloxd Servers...</div>
+    <div id="leaderboard">Loading rankings...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Using a fresh proxy mirror that doesn't wrap the data
-            const bloxdApi = "https://social28.bloxd.io";
-            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
+            // Using a different proxy bridge that handles Bloxd's headers better
+            const target = "https://social28.bloxd.io";
+            const proxy = "https://api.codetabs.com" + encodeURIComponent(target);
 
             try {
-                const response = await fetch(proxyUrl);
-                const wrapper = await response.json();
-                
-                // Check if the response contains valid JSON string or an HTML error
-                if (wrapper.contents.trim().startsWith("<!DOCTYPE")) {
-                    throw new Error("Bloxd blocked the proxy. Retrying...");
+                const response = await fetch(proxy);
+                const text = await response.text();
+
+                // If the response is HTML (starts with <), Bloxd is blocking the proxy
+                if (text.trim().startsWith("<")) {
+                    throw new Error("Bloxd sent HTML instead of JSON");
                 }
 
-                const data = JSON.parse(wrapper.contents);
+                const data = JSON.parse(text);
 
                 // Sort by Players (CCU)
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
@@ -51,8 +51,8 @@
                 
             } catch (err) {
                 console.error("Fetch Error:", err);
-                document.getElementById('leaderboard').innerHTML = "<b>Bloxd is Busy.</b><br>Retrying in 15 seconds...";
-                setTimeout(updateLeaderboard, 15000);
+                document.getElementById('leaderboard').innerHTML = "Bloxd servers are busy. Retrying in 10s...";
+                setTimeout(updateLeaderboard, 10000);
             }
         }
 
