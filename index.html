@@ -1,63 +1,46 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Bloxd Top 10 Leaderboard</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; }
-        table { border-collapse: collapse; width: 80%; margin-top: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        th { background-color: #4a90e2; padding: 15px; }
-        td { padding: 12px; border-bottom: 1px solid #333; text-align: center; }
-        tr:hover { background-color: #2a2a2a; }
-        .ccu-count { color: #44ff44; font-weight: bold; }
-        .fav-count { color: #ffcc00; }
-    </style>
-</head>
-<body>
-    <h1>🏆 Bloxd.io Top 10 Custom Games</h1>
-    <div id="leaderboard">Loading rankings...</div>
+<script>
+    async function updateLeaderboard() {
+        const apiUrl = "https://social28.bloxd.io";
+        // Using AllOrigins proxy to bypass the 403 Forbidden error
+        const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
 
-    <script>
-        async function updateLeaderboard() {
-            // Using the endpoint you provided + a CORS proxy to bypass browser blocks
-            const apiUrl = "https://social28.bloxd.io";
-            const proxyUrl = "https://corsproxy.io?" + encodeURIComponent(apiUrl);
+        try {
+            const response = await fetch(proxyUrl);
+            const wrapper = await response.json();
+            
+            // AllOrigins wraps the data in a "contents" string, so we must parse it
+            const data = JSON.parse(wrapper.contents);
 
-            try {
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
+            // Sort by CCU (High to Low) and take top 10
+            const top10 = data.sort((a, b) => b.ccu - a.ccu).slice(0, 10);
 
-                // Sort by CCU (High to Low) and take top 10
-                const top10 = data.sort((a, b) => b.ccu - a.ccu).slice(0, 10);
+            let tableHtml = `<table>
+                <tr>
+                    <th>Rank</th>
+                    <th>Game Name</th>
+                    <th>Live Players (CCU)</th>
+                    <th>Total Favorites</th>
+                </tr>`;
 
-                let tableHtml = `<table>
+            top10.forEach((game, index) => {
+                tableHtml += `
                     <tr>
-                        <th>Rank</th>
-                        <th>Game Name</th>
-                        <th>Live Players (CCU)</th>
-                        <th>Total Favorites</th>
+                        <td>${index + 1}</td>
+                        <td>${game.name}</td>
+                        <td class="ccu-count">${game.ccu.toLocaleString()}</td>
+                        <td class="fav-count">★ ${game.totalFavorites.toLocaleString()}</td>
                     </tr>`;
+            });
 
-                top10.forEach((game, index) => {
-                    tableHtml += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${game.name}</td>
-                            <td class="ccu-count">${game.ccu.toLocaleString()}</td>
-                            <td class="fav-count">★ ${game.totalFavorites.toLocaleString()}</td>
-                        </tr>`;
-                });
-
-                tableHtml += `</table>`;
-                document.getElementById('leaderboard').innerHTML = tableHtml;
-                
-            } catch (err) {
-                document.getElementById('leaderboard').innerHTML = "Error fetching data. Check console.";
-                console.error(err);
-            }
+            tableHtml += `</table>`;
+            document.getElementById('leaderboard').innerHTML = tableHtml;
+            
+        } catch (err) {
+            document.getElementById('leaderboard').innerHTML = "Proxy Error. Try refreshing in a moment.";
+            console.error("Fetch error:", err);
         }
+    }
 
-        updateLeaderboard();
-        setInterval(updateLeaderboard, 30000); // Refresh every 30 seconds
-    </script>
-</body>
-</html>
+    updateLeaderboard();
+    setInterval(updateLeaderboard, 60000); 
+</script>
