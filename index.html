@@ -3,37 +3,35 @@
 <head>
     <title>Bloxd Top 10</title>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
-        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; }
+        th, td { padding: 12px; border: 1px solid #444; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Connecting to Bloxd Servers...</div>
+    <div id="leaderboard">Fetching live data...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Using a more stable CORS proxy mirror
-            const bloxdApi = "https://social28.bloxd.io";
-            const proxyUrl = "https://cors-anywhere.herokuapp.com" + bloxdApi;
+            // Added a random number at the end (?v=) to stop the proxy from showing old errors
+            const bloxdApi = "https://social28.bloxd.io" + Math.random();
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
             try {
-                // Note: If this fails, you may need to visit https://cors-anywhere.herokuapp.comcorsdemo 
-                // and click "Request temporary access" to unlock the proxy for your browser.
-                const response = await fetch(proxyUrl, {
-                    headers: { "X-Requested-With": "XMLHttpRequest" }
-                });
+                const response = await fetch(proxyUrl);
+                const wrapper = await response.json();
                 
-                const data = await response.json();
+                // wrapper.contents is the string from Bloxd
+                const data = JSON.parse(wrapper.contents);
 
-                // Sort by Players (CCU)
+                // Sort: Highest CCU first
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
-                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                let html = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 top10.forEach((g, i) => {
                     html += `<tr>
@@ -48,15 +46,13 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
-                // Fallback for if the proxy is locked
-                document.getElementById('leaderboard').innerHTML = 
-                    'Proxy locked. Please <a href="https://cors-anywhere.herokuapp.comcorsdemo" target="_blank" style="color:#00ccff;">Click Here</a> and click "Request temporary access", then refresh this page.';
+                console.error("Data Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Proxy is currently busy. Refreshing in 30s...";
+                setTimeout(updateLeaderboard, 30000);
             }
         }
 
         updateLeaderboard();
-        setInterval(updateLeaderboard, 60000); 
     </script>
 </body>
 </html>
