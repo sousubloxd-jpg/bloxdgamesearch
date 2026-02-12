@@ -3,57 +3,64 @@
 <head>
     <title>Bloxd Top 10</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
-        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 800px; background: #222; }
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
-        th { background: #333; color: #4a90e2; }
-        .ccu { color: #44ff44; font-weight: bold; }
+        th { background: #333; color: #00ccff; }
+        .ccu { color: #00ff00; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>🏆 Bloxd.io Top 10 Games</h1>
-    <div id="leaderboard">Loading rankings...</div>
+    <h1>🏆 Top 10 Bloxd.io Games</h1>
+    <div id="leaderboard">Connecting to Bloxd...</div>
 
     <script>
         async function updateLeaderboard() {
-            // 1. Set the raw Bloxd API URL
-            const rawUrl = "https://social28.bloxd.io";
+            // The Bloxd API URL
+            var bloxdUrl = "https://social28.bloxd.io";
             
-            // 2. Wrap it correctly for the AllOrigins Proxy
-            // NOTICE: The `?url=` and the `${}` are REQUIRED
-            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(rawUrl);
+            // The Proxy URL (Using the + sign to avoid the {} errors)
+            var proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdUrl);
 
             try {
-                const response = await fetch(proxyUrl);
-                if (!response.ok) throw new Error('Proxy down');
+                var response = await fetch(proxyUrl);
+                var wrapper = await response.json();
                 
-                const wrapper = await response.json();
-                const data = JSON.parse(wrapper.contents);
+                // AllOrigins puts the data inside a string called 'contents'
+                var data = JSON.parse(wrapper.contents);
 
-                // Sort by CCU high to low
-                const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
-
-                let tableHtml = `<table><tr><th>Rank</th><th>Game Name</th><th>CCU</th><th>Favs</th></tr>`;
-
-                top10.forEach((game, index) => {
-                    tableHtml += `<tr>
-                        <td>${index + 1}</td>
-                        <td>${game.name || 'Unnamed'}</td>
-                        <td class="ccu">${(game.ccu || 0).toLocaleString()}</td>
-                        <td>★ ${(game.totalFavorites || 0).toLocaleString()}</td>
-                    </tr>`;
+                // Sort the games: Highest CCU (players) at the top
+                data.sort(function(a, b) {
+                    return (b.ccu || 0) - (a.ccu || 0);
                 });
 
-                tableHtml += `</table>`;
+                // Get only the first 10
+                var top10 = data.slice(0, 10);
+
+                var tableHtml = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+
+                for (var i = 0; i < top10.length; i++) {
+                    var game = top10[i];
+                    tableHtml += "<tr>" +
+                        "<td>" + (i + 1) + "</td>" +
+                        "<td>" + (game.name || "Unknown") + "</td>" +
+                        "<td class='ccu'>" + (game.ccu || 0).toLocaleString() + "</td>" +
+                        "<td>★ " + (game.totalFavorites || 0).toLocaleString() + "</td>" +
+                    "</tr>";
+                }
+
+                tableHtml += "</table>";
                 document.getElementById('leaderboard').innerHTML = tableHtml;
                 
             } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Fetch failed. Trying again...";
+                console.error("Error loading data:", err);
+                document.getElementById('leaderboard').innerHTML = "Server busy. Retrying...";
             }
         }
 
+        // Run the function immediately
         updateLeaderboard();
+        // Refresh every 60 seconds
         setInterval(updateLeaderboard, 60000); 
     </script>
 </body>
