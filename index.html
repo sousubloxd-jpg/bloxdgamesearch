@@ -1,60 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Bloxd Top 10 Leaderboard</title>
-    <style>
-        body { font-family: sans-serif; background: #0b0b0b; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 15px; border-bottom: 1px solid #333; text-align: left; }
-        th { background: #252525; color: #00ccff; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
-        tr:hover { background: #222; }
-        .ccu { color: #00ff00; font-weight: bold; }
-        .fav { color: #ffcc00; }
-    </style>
-</head>
-<body>
-    <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Connecting to private worker...</div>
-
-    <script>
-        async function updateLeaderboard() {
-            // PASTE YOUR CLOUDFLARE WORKER URL HERE:
-            const workerUrl = "https://bloxdgamefinder.sousukechua.workers.dev/";
-
-            try {
-                const response = await fetch(workerUrl);
-                if (!response.ok) throw new Error("Worker Error");
-
-                const data = await response.json();
-                const games = data.results || [];
-
-                // Sort by Players (CCU)
-                games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
-
-                const top10 = games.slice(0, 10);
-                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
-
-                top10.forEach((g, i) => {
-                    html += `<tr>
-                        <td>${i + 1}</td>
-                        <td>${g.name || 'Unnamed'}</td>
-                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
-                        <td class="fav">★ ${(g.favourites || 0).toLocaleString()}</td>
-                    </tr>`;
-                });
-
-                html += "</table>";
-                document.getElementById('leaderboard').innerHTML = html;
-                
-            } catch (err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Worker connection failed. Retrying...";
-                setTimeout(updateLeaderboard, 10000);
-            }
-        }
-
-        updateLeaderboard();
-        setInterval(updateLeaderboard, 60000);
-    </script>
-</body>
-</html>
+fetch("https://social28.bloxd.io/social/get-published-game-previews", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Accept": "application/json"
+  },
+  body: JSON.stringify({
+    "contents": {
+      "searchQuery": null,
+      "pageNumber": 1,
+      "pageSize": 10, // Let's just get the Top 10
+      "onlyFavouriteGames": false,
+      "gameCategories": []
+    }
+  })
+})
+.then(res => res.json())
+.then(data => console.log("Success! Top Game:", data.games[0].gameName))
+.catch(err => console.error("CORS Blocked or Error:", err));
