@@ -1,67 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bloxd Top 10</title>
+    <title>Bloxd Top 10 Leaderboard</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
-        .fav { color: #ffcc00; }
     </style>
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Connecting to Bloxd Servers...</div>
+    <div id="leaderboard">Reading Network Data...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Using an array to force the bridge (/v1/proxy?quest=) to stay in place
-            var bridge = [
-                "https://api.codetabs.com",
-                "/v1/proxy",
-                "?quest=",
-                encodeURIComponent("https://social26.bloxd.io")
-            ];
-            var finalUrl = bridge.join("");
+            // Using AllOrigins as a tunnel to send a POST request
+            const bloxdApi = "https://social26.bloxd.io";
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
             try {
-                var response = await fetch(finalUrl);
-                var data = await response.json();
+                // We fetch the data. Note: Direct POST via proxy is tricky, 
+                // but AllOrigins GET often works if the server allows fallback.
+                const response = await fetch(proxyUrl);
+                const wrapper = await response.json();
+                const data = JSON.parse(wrapper.contents);
 
-                // Access the 'results' array from the file you found
-                var games = data.results || [];
+                // Use the 'results' field from the network response you found
+                const games = data.results || [];
 
-                // Sort: Highest CCU (Players) first
-                games.sort(function(a, b) {
-                    return (b.ccu || 0) - (a.ccu || 0);
+                // Sort by CCU (Players)
+                games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
+
+                const top10 = games.slice(0, 10);
+                let html = "<table><tr><th>#</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
+
+                top10.forEach((g, i) => {
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td>${g.name}</td>
+                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
+                        <td>★ ${(g.favourites || 0).toLocaleString()}</td>
+                    </tr>`;
                 });
-
-                var top10 = games.slice(0, 10);
-                var html = "<table><tr><th>#</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
-
-                for (var i = 0; i < top10.length; i++) {
-                    var g = top10[i];
-                    html += "<tr>" +
-                        "<td>" + (i + 1) + "</td>" +
-                        "<td>" + (g.name || "Unknown") + "</td>" +
-                        "<td class='ccu'>" + (g.ccu || 0).toLocaleString() + "</td>" +
-                        "<td class='fav'>★ " + (g.favourites || 0).toLocaleString() + "</td>" +
-                    "</tr>";
-                }
 
                 html += "</table>";
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 15s...";
-                setTimeout(updateLeaderboard, 15000);
+                console.error("Network Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Failed to sync with Bloxd Network. Retrying...";
             }
         }
 
         updateLeaderboard();
+        setInterval(updateLeaderboard, 60000);
     </script>
 </body>
 </html>
