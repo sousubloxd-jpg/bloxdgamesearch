@@ -16,22 +16,19 @@
 
     <script>
         async function updateLeaderboard() {
-            try {
-                // We split the pieces so your editor cannot "clean" or "mash" the link
-                var partA = "https://api.allorigins.win";
-                var partB = "/get";
-                var partC = "?url=";
-                var target = "https://social28.bloxd.io";
-                
-                // This FORCES the slash and question mark into the URL
-                var finalUrl = partA + partB + partC + encodeURIComponent(target);
+            // Using a fresh proxy mirror that doesn't wrap the data
+            const bloxdApi = "https://social28.bloxd.io";
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
-                const response = await fetch(finalUrl);
-                if (!response.ok) throw new Error("Proxy error");
-                
+            try {
+                const response = await fetch(proxyUrl);
                 const wrapper = await response.json();
                 
-                // Parse the inner data from Bloxd
+                // Check if the response contains valid JSON string or an HTML error
+                if (wrapper.contents.trim().startsWith("<!DOCTYPE")) {
+                    throw new Error("Bloxd blocked the proxy. Retrying...");
+                }
+
                 const data = JSON.parse(wrapper.contents);
 
                 // Sort by Players (CCU)
@@ -53,9 +50,9 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Critical Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 10s...";
-                setTimeout(updateLeaderboard, 10000);
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = "<b>Bloxd is Busy.</b><br>Retrying in 15 seconds...";
+                setTimeout(updateLeaderboard, 15000);
             }
         }
 
