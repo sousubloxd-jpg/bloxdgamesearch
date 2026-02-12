@@ -8,54 +8,48 @@
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #4a90e2; }
         .ccu { color: #44ff44; font-weight: bold; }
-        .fav { color: #ffcc00; }
     </style>
 </head>
 <body>
     <h1>🏆 Bloxd.io Top 10 Games</h1>
-    
-    <div id="leaderboard">Loading Live Data...</div>
+    <div id="leaderboard">Loading rankings...</div>
 
     <script>
         async function updateLeaderboard() {
-            const apiUrl = "https://social28.bloxd.io";
-            // Corrected proxy URL format
-            const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
+            // 1. Set the raw Bloxd API URL
+            const rawUrl = "https://social28.bloxd.io";
+            
+            // 2. Wrap it correctly for the AllOrigins Proxy
+            // NOTICE: The `?url=` and the `${}` are REQUIRED
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(rawUrl);
 
             try {
                 const response = await fetch(proxyUrl);
-                const wrapper = await response.json();
+                if (!response.ok) throw new Error('Proxy down');
                 
-                // Parse the inner content from AllOrigins
+                const wrapper = await response.json();
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort by CCU and take top 10
+                // Sort by CCU high to low
                 const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
 
-                let tableHtml = `<table>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Game Name</th>
-                        <th>CCU</th>
-                        <th>Favorites</th>
-                    </tr>`;
+                let tableHtml = `<table><tr><th>Rank</th><th>Game Name</th><th>CCU</th><th>Favs</th></tr>`;
 
                 top10.forEach((game, index) => {
-                    tableHtml += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td>${game.name || 'Unnamed Game'}</td>
-                            <td class="ccu">${(game.ccu || 0).toLocaleString()}</td>
-                            <td class="fav">★ ${(game.totalFavorites || 0).toLocaleString()}</td>
-                        </tr>`;
+                    tableHtml += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${game.name || 'Unnamed'}</td>
+                        <td class="ccu">${(game.ccu || 0).toLocaleString()}</td>
+                        <td>★ ${(game.totalFavorites || 0).toLocaleString()}</td>
+                    </tr>`;
                 });
 
                 tableHtml += `</table>`;
                 document.getElementById('leaderboard').innerHTML = tableHtml;
                 
             } catch (err) {
-                console.error("Fetch error:", err);
-                document.getElementById('leaderboard').innerHTML = "Failed to load rankings. Check back in a minute.";
+                console.error("Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Fetch failed. Trying again...";
             }
         }
 
