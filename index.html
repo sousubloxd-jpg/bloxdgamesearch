@@ -1,48 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bloxd Top 10</title>
+    <title>Bloxd Top 10 Leaderboard</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
+        .fav { color: #ffcc00; }
     </style>
 </head>
 <body>
-    <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Loading rankings...</div>
+    <h1>🏆 Bloxd.io Top 10 (By CCU)</h1>
+    <div id="leaderboard">Fetching live games...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Using a different proxy bridge that handles Bloxd's headers better
-            const target = "https://social28.bloxd.io";
-            const proxy = "https://api.codetabs.com" + encodeURIComponent(target);
+            // The exact API you found
+            const bloxdApi = "https://social26.bloxd.io/social/get-published-game-previews";
+            // Proxy to bypass CORS on GitHub
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
             try {
-                const response = await fetch(proxy);
-                const text = await response.text();
+                const response = await fetch(proxyUrl, {
+                    method: 'GET', // AllOrigins converts our request, but the target likes POST data
+                });
+                
+                const wrapper = await response.json();
+                const rawData = JSON.parse(wrapper.contents);
+                
+                // Based on your file: data is in .results
+                const games = rawData.results;
 
-                // If the response is HTML (starts with <), Bloxd is blocking the proxy
-                if (text.trim().startsWith("<")) {
-                    throw new Error("Bloxd sent HTML instead of JSON");
-                }
+                // Sort by CCU (Highest first)
+                games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
-                const data = JSON.parse(text);
+                const top10 = games.slice(0, 10);
+                
+                let html = "<table><tr><th>Rank</th><th>Game Name</th><th>Players (CCU)</th><th>Favorites</th></tr>";
 
-                // Sort by Players (CCU)
-                data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
-
-                const top10 = data.slice(0, 10);
-                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
-
-                top10.forEach((g, i) => {
+                top10.forEach((game, i) => {
                     html += `<tr>
                         <td>${i + 1}</td>
-                        <td>${g.name || 'Unnamed'}</td>
-                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
-                        <td>★ ${(g.totalFavorites || 0).toLocaleString()}</td>
+                        <td>${game.name}</td>
+                        <td class="ccu">${(game.ccu || 0).toLocaleString()}</td>
+                        <td class="fav">★ ${(game.favourites || 0).toLocaleString()}</td>
                     </tr>`;
                 });
 
@@ -50,9 +53,9 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Bloxd servers are busy. Retrying in 10s...";
-                setTimeout(updateLeaderboard, 10000);
+                console.error("Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Failed to load data. Retrying...";
+                setTimeout(updateLeaderboard, 5000); // Fast retry
             }
         }
 
