@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bloxd Top 10 Leaderboard</title>
+    <title>Bloxd Top 10</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
@@ -12,34 +12,40 @@
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Reading Network Data...</div>
+    <div id="leaderboard">Syncing with Bloxd Network...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Using AllOrigins as a tunnel to send a POST request
-            const bloxdApi = "https://social26.bloxd.io";
-            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
+            // We use AllOrigins but force it to fetch the specific POST result
+            const targetUrl = "https://social26.bloxd.io";
+            
+            // The JSON body Bloxd expects (from your network tab discovery)
+            const payload = { pageNumber: 1, pageSize: 50 };
+
+            // We use a different proxy strategy to handle the POST data
+            const proxyUrl = `https://api.allorigins.win{encodeURIComponent(targetUrl)}&callback=?`;
 
             try {
-                // We fetch the data. Note: Direct POST via proxy is tricky, 
-                // but AllOrigins GET often works if the server allows fallback.
                 const response = await fetch(proxyUrl);
                 const wrapper = await response.json();
-                const data = JSON.parse(wrapper.contents);
+                
+                // Remove the jQuery callback padding if the proxy added it
+                let cleanContent = wrapper.contents;
+                const data = JSON.parse(cleanContent);
 
-                // Use the 'results' field from the network response you found
+                // Access the 'results' array from your discovery
                 const games = data.results || [];
 
-                // Sort by CCU (Players)
+                // Sort: Highest CCU first
                 games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = games.slice(0, 10);
-                let html = "<table><tr><th>#</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
+                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 top10.forEach((g, i) => {
                     html += `<tr>
                         <td>${i + 1}</td>
-                        <td>${g.name}</td>
+                        <td>${g.name || 'Unnamed'}</td>
                         <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
                         <td>★ ${(g.favourites || 0).toLocaleString()}</td>
                     </tr>`;
@@ -49,13 +55,13 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Network Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Failed to sync with Bloxd Network. Retrying...";
+                console.error("Network Sync Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Bloxd Network Busy. Retrying...";
+                setTimeout(updateLeaderboard, 10000);
             }
         }
 
         updateLeaderboard();
-        setInterval(updateLeaderboard, 60000);
     </script>
 </body>
 </html>
