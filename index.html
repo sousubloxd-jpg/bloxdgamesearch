@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bloxd Top 10</title>
+    <title>Bloxd Top 10 Leaderboard</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 2px solid #444; }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
@@ -12,48 +12,64 @@
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Mimicking Network POST...</div>
+    <div id="leaderboard">Attempting to bypass blocks...</div>
 
     <script>
         async function updateLeaderboard() {
-            const bloxdApi = "https://social26.bloxd.io/social/get-published-game-previews";
+            const bloxdApi = "https://social26.bloxd.io";
             
-            // We use a different proxy strategy that supports POST data
-            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
+            // List of proxies to rotate through if one fails
+            const proxies = [
+                "https://api.allorigins.win",
+                "https://api.codetabs.com",
+                "https://thingproxy.freeboard.io"
+            ];
 
-            try {
-                const response = await fetch(proxyUrl);
-                const wrapper = await response.json();
-                
-                // wrapper.contents is the string from Bloxd
-                const data = JSON.parse(wrapper.contents);
+            for (let proxy of proxies) {
+                try {
+                    const finalUrl = proxy + encodeURIComponent(bloxdApi);
+                    const response = await fetch(finalUrl);
+                    
+                    if (!response.ok) continue; // Try next proxy if 520/522 error
 
-                // Access the 'results' array from the POST response you found
-                const games = data.results || [];
+                    const text = await response.text();
+                    
+                    // If it's AllOrigins, we need to extract .contents
+                    let jsonData;
+                    if (proxy.includes("allorigins")) {
+                        const wrapper = JSON.parse(text);
+                        jsonData = JSON.parse(wrapper.contents);
+                    } else {
+                        jsonData = JSON.parse(text);
+                    }
 
-                // Sort: Highest CCU (Players) first
-                games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
+                    // Use the 'results' field from your Network Tab discovery
+                    const games = jsonData.results || [];
+                    games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
-                const top10 = games.slice(0, 10);
-                let html = "<table><tr><th>Rank</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
+                    const top10 = games.slice(0, 10);
+                    let html = "<table><tr><th>Rank</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
 
-                top10.forEach((g, i) => {
-                    html += `<tr>
-                        <td>${i + 1}</td>
-                        <td>${g.name || 'Unnamed'}</td>
-                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
-                        <td>★ ${(g.favourites || 0).toLocaleString()}</td>
-                    </tr>`;
-                });
+                    top10.forEach((g, i) => {
+                        html += `<tr>
+                            <td>${i + 1}</td>
+                            <td>${g.name || 'Unnamed'}</td>
+                            <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
+                            <td>★ ${(g.favourites || 0).toLocaleString()}</td>
+                        </tr>`;
+                    });
 
-                html += "</table>";
-                document.getElementById('leaderboard').innerHTML = html;
-                
-            } catch (err) {
-                console.error("Network Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Bloxd Busy. Retrying in 10s...";
-                setTimeout(updateLeaderboard, 10000);
+                    html += "</table>";
+                    document.getElementById('leaderboard').innerHTML = html;
+                    return; // EXIT loop once we successfully get data!
+
+                } catch (err) {
+                    console.warn(`Proxy ${proxy} failed, trying next...`);
+                }
             }
+
+            document.getElementById('leaderboard').innerHTML = "All proxies blocked. Retrying in 20s...";
+            setTimeout(updateLeaderboard, 20000);
         }
 
         updateLeaderboard();
