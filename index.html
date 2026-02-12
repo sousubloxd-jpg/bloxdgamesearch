@@ -17,43 +17,45 @@
     <script>
         async function updateLeaderboard() {
             try {
-                // We split the proxy parts so the computer cannot mash them into 'codetabs.comhttps'
-                var p1 = "https://api.codetabs.com";
-                var p2 = "/v1/proxy";
-                var p3 = "?quest=";
+                // We split the pieces so your editor cannot "clean" or "mash" the link
+                var partA = "https://api.allorigins.win";
+                var partB = "/get";
+                var partC = "?url=";
                 var target = "https://social28.bloxd.io";
                 
-                // Building the URL with forced characters
-                var finalUrl = p1 + p2 + p3 + encodeURIComponent(target);
+                // This FORCES the slash and question mark into the URL
+                var finalUrl = partA + partB + partC + encodeURIComponent(target);
 
-                var response = await fetch(finalUrl);
+                const response = await fetch(finalUrl);
                 if (!response.ok) throw new Error("Proxy error");
                 
-                var data = await response.json();
+                const wrapper = await response.json();
+                
+                // Parse the inner data from Bloxd
+                const data = JSON.parse(wrapper.contents);
 
-                // Sort: Highest CCU (Players) first
-                data.sort(function(a, b) { return (b.ccu || 0) - (a.ccu || 0); });
+                // Sort by Players (CCU)
+                data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
-                var top10 = data.slice(0, 10);
-                var html = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                const top10 = data.slice(0, 10);
+                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
-                for (var i = 0; i < top10.length; i++) {
-                    var g = top10[i];
-                    html += "<tr>" +
-                        "<td>" + (i + 1) + "</td>" +
-                        "<td>" + (g.name || "Unknown") + "</td>" +
-                        "<td class='ccu'>" + (g.ccu || 0).toLocaleString() + "</td>" +
-                        "<td>★ " + (g.totalFavorites || 0).toLocaleString() + "</td>" +
-                    "</tr>";
-                }
+                top10.forEach((g, i) => {
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td>${g.name || 'Unnamed'}</td>
+                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
+                        <td>★ ${(g.totalFavorites || 0).toLocaleString()}</td>
+                    </tr>`;
+                });
 
                 html += "</table>";
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
                 console.error("Critical Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 30s...";
-                setTimeout(updateLeaderboard, 30000);
+                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 10s...";
+                setTimeout(updateLeaderboard, 10000);
             }
         }
 
