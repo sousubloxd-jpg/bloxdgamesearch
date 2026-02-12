@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bloxd Top 10 Leaderboard</title>
+    <title>Bloxd Top 10</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
         table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
-        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th, td { padding: 12px; border: 1px solid #444; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Sending Network Payload...</div>
+    <div id="leaderboard">Connecting via Private Bridge...</div>
 
     <script>
         async function updateLeaderboard() {
+            // Using a specific CORS bridge that handles POST payloads
             const bloxdApi = "https://social26.bloxd.io";
-            // We use a proxy that supports POST requests
             const proxyUrl = "https://corsproxy.io?" + encodeURIComponent(bloxdApi);
 
-            // This is the EXACT payload you found in your network tab
             const payload = {
                 "contents": {
                     "searchQuery": null,
@@ -41,12 +40,12 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error("Bloxd rejected the request");
+                if (!response.ok) throw new Error("Blocked by Bloxd Firewall");
 
                 const data = await response.json();
                 const games = data.results || [];
 
-                // Sort by CCU (Players)
+                // Sort CCU High to Low
                 games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = games.slice(0, 10);
@@ -55,7 +54,7 @@
                 top10.forEach((g, i) => {
                     html += `<tr>
                         <td>${i + 1}</td>
-                        <td>${g.name || 'Unnamed'}</td>
+                        <td>${g.name}</td>
                         <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
                         <td style="color:#ffcc00">★ ${(g.favourites || 0).toLocaleString()}</td>
                     </tr>`;
@@ -65,13 +64,14 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Payload Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Bloxd Security Block. Retrying in 15s...";
-                setTimeout(updateLeaderboard, 15000);
+                console.error(err);
+                document.getElementById('leaderboard').innerHTML = 
+                    "Bloxd Firewall active. <br>Try refreshing in 60s or check the [Bloxd Status](https://bloxd.io).";
             }
         }
 
         updateLeaderboard();
+        setInterval(updateLeaderboard, 60000);
     </script>
 </body>
 </html>
