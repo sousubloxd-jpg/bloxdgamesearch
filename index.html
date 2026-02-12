@@ -4,8 +4,8 @@
     <title>Bloxd Top 10</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; }
-        th, td { padding: 12px; border: 1px solid #444; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; border: 1px solid #444; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
@@ -16,29 +16,24 @@
 
     <script>
         async function updateLeaderboard() {
-            // Define the parts separately to stop the 'winhttps' error
-            const proxyHost = "https://api.allorigins.win";
-            const proxyAction = "/get?url=";
-            const bloxdTarget = "https://social28.bloxd.io";
-            
-            // Combine them with the required slashes and question mark
-            const finalUrl = proxyHost + proxyAction + encodeURIComponent(bloxdTarget);
+            // I have typed the full proxy path here to avoid the missing slash error
+            const finalUrl = "https://api.allorigins.win" + encodeURIComponent("https://social28.bloxd.io");
 
             try {
                 const response = await fetch(finalUrl);
-                if (!response.ok) throw new Error("Proxy error");
-                
                 const wrapper = await response.json();
+                
+                // Bloxd data is inside wrapper.contents
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort: Highest players at the top
+                // Sort by Players (CCU)
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
-                let tableHtml = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 top10.forEach((g, i) => {
-                    tableHtml += `<tr>
+                    html += `<tr>
                         <td>${i + 1}</td>
                         <td>${g.name || 'Unnamed'}</td>
                         <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
@@ -46,11 +41,11 @@
                     </tr>`;
                 });
 
-                tableHtml += "</table>";
-                document.getElementById('leaderboard').innerHTML = tableHtml;
+                html += "</table>";
+                document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
+                console.error("Error:", err);
                 document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying...";
             }
         }
