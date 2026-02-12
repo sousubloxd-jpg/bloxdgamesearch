@@ -16,19 +16,24 @@
 
     <script>
         async function updateLeaderboard() {
-            // We define the proxy and the target separately with a slash between them
-            const proxy = "https://api.allorigins.win";
-            const target = encodeURIComponent("https://social28.bloxd.io");
-            const finalUrl = proxy + target;
-
             try {
+                // We define the proxy pieces separately so they CANNOT be merged into 'winhttps'
+                const host = "https://api.allorigins.win";
+                const path = "/get?url=";
+                const target = encodeURIComponent("https://social28.bloxd.io");
+                
+                // This combines them with the required slash and question mark
+                const finalUrl = host + path + target;
+
                 const response = await fetch(finalUrl);
+                if (!response.ok) throw new Error("Proxy error");
+                
                 const wrapper = await response.json();
                 
-                // Parse the data from the AllOrigins 'contents' string
+                // AllOrigins returns data inside 'contents', so we parse it
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort: Highest CCU (Players) first
+                // Sort by Players (CCU)
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
@@ -47,7 +52,7 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
+                console.error("Critical Error:", err);
                 document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 30s...";
                 setTimeout(updateLeaderboard, 30000);
             }
