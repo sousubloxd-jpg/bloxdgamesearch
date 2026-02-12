@@ -12,31 +12,30 @@
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Syncing with Bloxd Network...</div>
+    <div id="leaderboard">Mimicking Network POST...</div>
 
     <script>
         async function updateLeaderboard() {
-            // We split these into separate words so they can't be "mashed" together
-            const proxyHost = "https://api.allorigins.win";
-            const proxyAction = "/get?url=";
-            const bloxdTarget = "https://social26.bloxd.io";
+            const bloxdApi = "https://social26.bloxd.io/social/get-published-game-previews";
             
-            // This FORCES the slash and the question mark back into the URL
-            const finalUrl = proxyHost + proxyAction + encodeURIComponent(bloxdTarget);
+            // We use a different proxy strategy that supports POST data
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
             try {
-                const response = await fetch(finalUrl);
+                const response = await fetch(proxyUrl);
                 const wrapper = await response.json();
                 
-                // Parse the 'results' array from the file you discovered in Network Tab
-                const rawData = JSON.parse(wrapper.contents);
-                const games = rawData.results || [];
+                // wrapper.contents is the string from Bloxd
+                const data = JSON.parse(wrapper.contents);
+
+                // Access the 'results' array from the POST response you found
+                const games = data.results || [];
 
                 // Sort: Highest CCU (Players) first
                 games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = games.slice(0, 10);
-                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                let html = "<table><tr><th>Rank</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
 
                 top10.forEach((g, i) => {
                     html += `<tr>
@@ -51,9 +50,9 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Bloxd Busy. Retrying in 15s...";
-                setTimeout(updateLeaderboard, 15000);
+                console.error("Network Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Bloxd Busy. Retrying in 10s...";
+                setTimeout(updateLeaderboard, 10000);
             }
         }
 
