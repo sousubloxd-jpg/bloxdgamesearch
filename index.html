@@ -16,20 +16,17 @@
 
     <script>
         async function updateLeaderboard() {
-            // 1. The target Bloxd data
-            var bloxd = "https://social28.bloxd.io";
-            
-            // 2. THE FIX: Added /get?url= explicitly between the two URLs
-            var proxy = "https://api.allorigins.win" + encodeURIComponent(bloxd);
+            // I have combined the link here so there is no math for the browser to mess up
+            var finalUrl = "https://api.allorigins.win" + encodeURIComponent("https://social28.bloxd.io");
 
             try {
-                var response = await fetch(proxy);
+                var response = await fetch(finalUrl);
                 var wrapper = await response.json();
                 
-                // 3. Parse the data from the AllOrigins 'contents' string
+                // AllOrigins requires parsing the .contents string
                 var data = JSON.parse(wrapper.contents);
 
-                // 4. Sort by CCU (Players)
+                // Sort: Highest CCU first
                 data.sort(function(a, b) { return (b.ccu || 0) - (a.ccu || 0); });
 
                 var top10 = data.slice(0, 10);
