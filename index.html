@@ -3,51 +3,56 @@
 <head>
     <title>Bloxd Top 10</title>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
-        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; }
-        th, td { padding: 12px; border: 1px solid #444; }
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; border: 2px solid #444; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
+        .fav { color: #ffcc00; }
     </style>
 </head>
 <body>
-    <h1>🏆 Top 10 Bloxd.io Games</h1>
-    <div id="leaderboard">Connecting to Bloxd...</div>
+    <h1>🏆 Bloxd.io Live Top 10</h1>
+    <div id="leaderboard">Connecting to Bloxd Servers...</div>
 
     <script>
         async function updateLeaderboard() {
-            // I have combined the link here so there is no math for the browser to mess up
-            var finalUrl = "https://api.allorigins.win" + encodeURIComponent("https://social28.bloxd.io");
-
             try {
-                var response = await fetch(finalUrl);
-                var wrapper = await response.json();
+                // We define the proxy parts separately so they can't be merged incorrectly
+                const proxyBase = "https://api.allorigins.win";
+                const proxyPath = "get?url=";
+                const bloxdApi = "https://social28.bloxd.io";
                 
-                // AllOrigins requires parsing the .contents string
-                var data = JSON.parse(wrapper.contents);
+                // Constructing the URL piece by piece
+                const finalUrl = proxyBase + proxyPath + encodeURIComponent(bloxdApi);
 
-                // Sort: Highest CCU first
-                data.sort(function(a, b) { return (b.ccu || 0) - (a.ccu || 0); });
+                const response = await fetch(finalUrl);
+                if (!response.ok) throw new Error("Proxy error");
+                
+                const wrapper = await response.json();
+                const data = JSON.parse(wrapper.contents);
 
-                var top10 = data.slice(0, 10);
-                var html = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                // Sort by Players (CCU)
+                data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
-                for (var i = 0; i < top10.length; i++) {
-                    var g = top10[i];
-                    html += "<tr>" +
-                        "<td>" + (i + 1) + "</td>" +
-                        "<td>" + (g.name || "Unknown") + "</td>" +
-                        "<td class='ccu'>" + (g.ccu || 0).toLocaleString() + "</td>" +
-                        "<td>★ " + (g.totalFavorites || 0).toLocaleString() + "</td>" +
-                    "</tr>";
-                }
+                const top10 = data.slice(0, 10);
+                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+
+                top10.forEach((g, i) => {
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td>${g.name || 'Unnamed'}</td>
+                        <td class="ccu">${(g.ccu || 0).toLocaleString()}</td>
+                        <td class="fav">★ ${(g.totalFavorites || 0).toLocaleString()}</td>
+                    </tr>`;
+                });
 
                 html += "</table>";
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Fetch Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Failed to load. Retrying...";
+                console.error("Critical Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 60s...";
             }
         }
 
