@@ -3,35 +3,36 @@
 <head>
     <title>Bloxd Top 10</title>
     <style>
-        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; }
-        th, td { padding: 12px; border: 1px solid #444; }
+        body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
 </head>
 <body>
     <h1>🏆 Bloxd.io Live Top 10</h1>
-    <div id="leaderboard">Fetching live data...</div>
+    <div id="leaderboard">Connecting to Bloxd Servers...</div>
 
     <script>
         async function updateLeaderboard() {
-            // Added a random number at the end (?v=) to stop the proxy from showing old errors
-            const bloxdApi = "https://social28.bloxd.io" + Math.random();
-            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
+            // We define the proxy and the target separately with a slash between them
+            const proxy = "https://api.allorigins.win";
+            const target = encodeURIComponent("https://social28.bloxd.io");
+            const finalUrl = proxy + target;
 
             try {
-                const response = await fetch(proxyUrl);
+                const response = await fetch(finalUrl);
                 const wrapper = await response.json();
                 
-                // wrapper.contents is the string from Bloxd
+                // Parse the data from the AllOrigins 'contents' string
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort: Highest CCU first
+                // Sort: Highest CCU (Players) first
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
-                let html = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                let html = "<table><tr><th>Rank</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 top10.forEach((g, i) => {
                     html += `<tr>
@@ -46,8 +47,8 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Data Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Proxy is currently busy. Refreshing in 30s...";
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 30s...";
                 setTimeout(updateLeaderboard, 30000);
             }
         }
