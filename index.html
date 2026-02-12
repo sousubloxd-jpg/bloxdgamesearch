@@ -16,24 +16,25 @@
 
     <script>
         async function updateLeaderboard() {
-            try {
-                // We define the proxy pieces separately so they CANNOT be merged into 'winhttps'
-                const host = "https://api.allorigins.win";
-                const path = "/get?url=";
-                const target = encodeURIComponent("https://social28.bloxd.io");
-                
-                // This combines them with the required slash and question mark
-                const finalUrl = host + path + target;
+            // Using a different stable proxy
+            const bloxdApi = "https://social28.bloxd.io";
+            const proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdApi);
 
-                const response = await fetch(finalUrl);
-                if (!response.ok) throw new Error("Proxy error");
-                
+            try {
+                // Set a 10-second timeout so it doesn't hang forever
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                const response = await fetch(proxyUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 const wrapper = await response.json();
                 
-                // AllOrigins returns data inside 'contents', so we parse it
+                // AllOrigins wraps data in a 'contents' string
+                if (!wrapper.contents) throw new Error("Empty response");
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort by Players (CCU)
+                // Sort by CCU (Players)
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
@@ -52,9 +53,10 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Critical Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 30s...";
-                setTimeout(updateLeaderboard, 30000);
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = 
+                    "<b>Connection Failed.</b><br>The proxy is busy. Refreshing automatically in 10s...";
+                setTimeout(updateLeaderboard, 10000);
             }
         }
 
