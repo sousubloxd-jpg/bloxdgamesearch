@@ -16,27 +16,21 @@
 
     <script>
         async function updateLeaderboard() {
-            // The Bloxd API URL
             var bloxdUrl = "https://social28.bloxd.io";
             
-            // The Proxy URL (Using the + sign to avoid the {} errors)
+            // FIXED LINE: Added the /get?url= piece properly
             var proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdUrl);
 
             try {
                 var response = await fetch(proxyUrl);
                 var wrapper = await response.json();
-                
-                // AllOrigins puts the data inside a string called 'contents'
                 var data = JSON.parse(wrapper.contents);
 
-                // Sort the games: Highest CCU (players) at the top
                 data.sort(function(a, b) {
                     return (b.ccu || 0) - (a.ccu || 0);
                 });
 
-                // Get only the first 10
                 var top10 = data.slice(0, 10);
-
                 var tableHtml = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 for (var i = 0; i < top10.length; i++) {
@@ -53,14 +47,12 @@
                 document.getElementById('leaderboard').innerHTML = tableHtml;
                 
             } catch (err) {
-                console.error("Error loading data:", err);
-                document.getElementById('leaderboard').innerHTML = "Server busy. Retrying...";
+                console.error("Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Fetch failed. Retrying...";
             }
         }
 
-        // Run the function immediately
         updateLeaderboard();
-        // Refresh every 60 seconds
         setInterval(updateLeaderboard, 60000); 
     </script>
 </body>
