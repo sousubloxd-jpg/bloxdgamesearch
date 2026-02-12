@@ -5,7 +5,7 @@
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
         table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; }
-        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th, td { padding: 12px; border: 1px solid #444; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
@@ -16,39 +16,41 @@
 
     <script>
         async function updateLeaderboard() {
-            var bloxdUrl = "https://social28.bloxd.io";
+            // 1. The target Bloxd data
+            var bloxd = "https://social28.bloxd.io";
             
-            // FIXED LINE: Added the /get?url= piece properly
-            var proxyUrl = "https://api.allorigins.win" + encodeURIComponent(bloxdUrl);
+            // 2. THE FIX: Added /get?url= explicitly between the two URLs
+            var proxy = "https://api.allorigins.win" + encodeURIComponent(bloxd);
 
             try {
-                var response = await fetch(proxyUrl);
+                var response = await fetch(proxy);
                 var wrapper = await response.json();
+                
+                // 3. Parse the data from the AllOrigins 'contents' string
                 var data = JSON.parse(wrapper.contents);
 
-                data.sort(function(a, b) {
-                    return (b.ccu || 0) - (a.ccu || 0);
-                });
+                // 4. Sort by CCU (Players)
+                data.sort(function(a, b) { return (b.ccu || 0) - (a.ccu || 0); });
 
                 var top10 = data.slice(0, 10);
-                var tableHtml = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
+                var html = "<table><tr><th>#</th><th>Game</th><th>Players</th><th>Favs</th></tr>";
 
                 for (var i = 0; i < top10.length; i++) {
-                    var game = top10[i];
-                    tableHtml += "<tr>" +
+                    var g = top10[i];
+                    html += "<tr>" +
                         "<td>" + (i + 1) + "</td>" +
-                        "<td>" + (game.name || "Unknown") + "</td>" +
-                        "<td class='ccu'>" + (game.ccu || 0).toLocaleString() + "</td>" +
-                        "<td>★ " + (game.totalFavorites || 0).toLocaleString() + "</td>" +
+                        "<td>" + (g.name || "Unknown") + "</td>" +
+                        "<td class='ccu'>" + (g.ccu || 0).toLocaleString() + "</td>" +
+                        "<td>★ " + (g.totalFavorites || 0).toLocaleString() + "</td>" +
                     "</tr>";
                 }
 
-                tableHtml += "</table>";
-                document.getElementById('leaderboard').innerHTML = tableHtml;
+                html += "</table>";
+                document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Fetch failed. Retrying...";
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Failed to load. Retrying...";
             }
         }
 
