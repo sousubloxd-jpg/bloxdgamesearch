@@ -1,46 +1,47 @@
-<script>
-    async function updateLeaderboard() {
-        const apiUrl = "https://social28.bloxd.io";
-        // Using AllOrigins proxy to bypass the 403 Forbidden error
-        const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
+async function updateLeaderboard() {
+    const apiUrl = "https://social28.bloxd.io";
+    // Use AllOrigins to bypass the 403 error
+    const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
 
-        try {
-            const response = await fetch(proxyUrl);
-            const wrapper = await response.json();
-            
-            // AllOrigins wraps the data in a "contents" string, so we must parse it
-            const data = JSON.parse(wrapper.contents);
+    try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const wrapper = await response.json();
+        // AllOrigins wraps the Bloxd data in a "contents" string, so we must parse it
+        const data = JSON.parse(wrapper.contents);
 
-            // Sort by CCU (High to Low) and take top 10
-            const top10 = data.sort((a, b) => b.ccu - a.ccu).slice(0, 10);
+        // Sort by CCU (High to Low) and take the top 10
+        const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
 
-            let tableHtml = `<table>
+        let tableHtml = `<table>
+            <tr>
+                <th>Rank</th>
+                <th>Game Name</th>
+                <th>Live Players (CCU)</th>
+                <th>Total Favorites</th>
+            </tr>`;
+
+        top10.forEach((game, index) => {
+            tableHtml += `
                 <tr>
-                    <th>Rank</th>
-                    <th>Game Name</th>
-                    <th>Live Players (CCU)</th>
-                    <th>Total Favorites</th>
+                    <td>${index + 1}</td>
+                    <td>${game.name || 'Unknown'}</td>
+                    <td style="color: #44ff44; font-weight: bold;">${(game.ccu || 0).toLocaleString()}</td>
+                    <td style="color: #ffcc00;">★ ${(game.totalFavorites || 0).toLocaleString()}</td>
                 </tr>`;
+        });
 
-            top10.forEach((game, index) => {
-                tableHtml += `
-                    <tr>
-                        <td>${index + 1}</td>
-                        <td>${game.name}</td>
-                        <td class="ccu-count">${game.ccu.toLocaleString()}</td>
-                        <td class="fav-count">★ ${game.totalFavorites.toLocaleString()}</td>
-                    </tr>`;
-            });
-
-            tableHtml += `</table>`;
-            document.getElementById('leaderboard').innerHTML = tableHtml;
-            
-        } catch (err) {
-            document.getElementById('leaderboard').innerHTML = "Proxy Error. Try refreshing in a moment.";
-            console.error("Fetch error:", err);
-        }
+        tableHtml += `</table>`;
+        document.getElementById('leaderboard').innerHTML = tableHtml;
+        
+    } catch (err) {
+        console.error("Fetch error:", err);
+        document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 60s...";
     }
+}
 
-    updateLeaderboard();
-    setInterval(updateLeaderboard, 60000); 
-</script>
+// Initial call
+updateLeaderboard();
+// Refresh every 60 seconds
+setInterval(updateLeaderboard, 60000);
