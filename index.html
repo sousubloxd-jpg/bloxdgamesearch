@@ -1,47 +1,57 @@
-async function updateLeaderboard() {
-    const apiUrl = "https://social28.bloxd.io";
-    // Use AllOrigins to bypass the 403 error
-    const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bloxd Top 10</title>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; text-align: center; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 800px; }
+        th, td { padding: 12px; border: 1px solid #444; }
+        th { background: #333; }
+    </style>
+</head>
+<body>
+    <h1>Top 10 Bloxd Games</h1>
+    
+    <!-- This div MUST exist for the script to work -->
+    <div id="leaderboard">Loading...</div>
 
-    try {
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error('Network response was not ok');
-        
-        const wrapper = await response.json();
-        // AllOrigins wraps the Bloxd data in a "contents" string, so we must parse it
-        const data = JSON.parse(wrapper.contents);
+    <script>
+        async function updateLeaderboard() {
+            const apiUrl = "https://social28.bloxd.io";
+            // Fixed the URL formatting below
+            const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
 
-        // Sort by CCU (High to Low) and take the top 10
-        const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
+            try {
+                const response = await fetch(proxyUrl);
+                const wrapper = await response.json();
+                const data = JSON.parse(wrapper.contents);
 
-        let tableHtml = `<table>
-            <tr>
-                <th>Rank</th>
-                <th>Game Name</th>
-                <th>Live Players (CCU)</th>
-                <th>Total Favorites</th>
-            </tr>`;
+                // Sort and slice
+                const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
 
-        top10.forEach((game, index) => {
-            tableHtml += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${game.name || 'Unknown'}</td>
-                    <td style="color: #44ff44; font-weight: bold;">${(game.ccu || 0).toLocaleString()}</td>
-                    <td style="color: #ffcc00;">★ ${(game.totalFavorites || 0).toLocaleString()}</td>
-                </tr>`;
-        });
+                let html = `<table><tr><th>Rank</th><th>Name</th><th>CCU</th><th>Favs</th></tr>`;
+                top10.forEach((game, i) => {
+                    html += `<tr>
+                        <td>${i + 1}</td>
+                        <td>${game.name}</td>
+                        <td style="color:#4f4">${game.ccu}</td>
+                        <td style="color:#ff0">${game.totalFavorites}</td>
+                    </tr>`;
+                });
+                html += `</table>`;
 
-        tableHtml += `</table>`;
-        document.getElementById('leaderboard').innerHTML = tableHtml;
-        
-    } catch (err) {
-        console.error("Fetch error:", err);
-        document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying in 60s...";
-    }
-}
+                // This looks for the div with id="leaderboard"
+                const element = document.getElementById('leaderboard');
+                if (element) {
+                    element.innerHTML = html;
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('leaderboard').innerText = "Failed to load data.";
+            }
+        }
 
-// Initial call
-updateLeaderboard();
-// Refresh every 60 seconds
-setInterval(updateLeaderboard, 60000);
+        updateLeaderboard();
+    </script>
+</body>
+</html>
