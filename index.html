@@ -16,27 +16,23 @@
 
     <script>
         async function updateLeaderboard() {
-            // We use AllOrigins but force it to fetch the specific POST result
-            const targetUrl = "https://social26.bloxd.io";
+            // We split these into separate words so they can't be "mashed" together
+            const proxyHost = "https://api.allorigins.win";
+            const proxyAction = "/get?url=";
+            const bloxdTarget = "https://social26.bloxd.io";
             
-            // The JSON body Bloxd expects (from your network tab discovery)
-            const payload = { pageNumber: 1, pageSize: 50 };
-
-            // We use a different proxy strategy to handle the POST data
-            const proxyUrl = `https://api.allorigins.win{encodeURIComponent(targetUrl)}&callback=?`;
+            // This FORCES the slash and the question mark back into the URL
+            const finalUrl = proxyHost + proxyAction + encodeURIComponent(bloxdTarget);
 
             try {
-                const response = await fetch(proxyUrl);
+                const response = await fetch(finalUrl);
                 const wrapper = await response.json();
                 
-                // Remove the jQuery callback padding if the proxy added it
-                let cleanContent = wrapper.contents;
-                const data = JSON.parse(cleanContent);
+                // Parse the 'results' array from the file you discovered in Network Tab
+                const rawData = JSON.parse(wrapper.contents);
+                const games = rawData.results || [];
 
-                // Access the 'results' array from your discovery
-                const games = data.results || [];
-
-                // Sort: Highest CCU first
+                // Sort: Highest CCU (Players) first
                 games.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = games.slice(0, 10);
@@ -55,9 +51,9 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Network Sync Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Bloxd Network Busy. Retrying...";
-                setTimeout(updateLeaderboard, 10000);
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Bloxd Busy. Retrying in 15s...";
+                setTimeout(updateLeaderboard, 15000);
             }
         }
 
