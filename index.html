@@ -4,8 +4,8 @@
     <title>Bloxd Top 10</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; }
-        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; border: 1px solid #444; }
-        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        table { margin: 20px auto; border-collapse: collapse; width: 95%; max-width: 800px; background: #222; }
+        th, td { padding: 12px; border: 1px solid #444; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
     </style>
@@ -16,21 +16,27 @@
 
     <script>
         async function updateLeaderboard() {
-            // Using CodeTabs Proxy - This is one single solid string.
-            const url = "https://api.codetabs.com";
+            // Using an array to join ensures the slashes stay put
+            var urlParts = [
+                "https://api.codetabs.com",
+                "/v1/proxy",
+                "?quest=",
+                encodeURIComponent("https://social28.bloxd.io")
+            ];
+            var finalUrl = urlParts.join("");
 
             try {
-                const response = await fetch(url);
-                const data = await response.json();
+                var response = await fetch(finalUrl);
+                var data = await response.json();
 
-                // Sort by CCU (High to Low)
-                data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
+                // Sort high to low
+                data.sort(function(a, b) { return (b.ccu || 0) - (a.ccu || 0); });
 
-                const top10 = data.slice(0, 10);
-                let html = "<table><tr><th>#</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
+                var top10 = data.slice(0, 10);
+                var html = "<table><tr><th>#</th><th>Game Name</th><th>Players</th><th>Favs</th></tr>";
 
-                for (let i = 0; i < top10.length; i++) {
-                    const g = top10[i];
+                for (var i = 0; i < top10.length; i++) {
+                    var g = top10[i];
                     html += "<tr>" +
                         "<td>" + (i + 1) + "</td>" +
                         "<td>" + (g.name || "Unknown") + "</td>" +
@@ -44,7 +50,7 @@
                 
             } catch (err) {
                 console.error("Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Proxy Busy. Retrying...";
+                document.getElementById('leaderboard').innerHTML = "Proxy limit reached. Retrying soon...";
             }
         }
 
