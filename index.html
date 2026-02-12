@@ -4,7 +4,7 @@
     <title>Bloxd Top 10</title>
     <style>
         body { font-family: sans-serif; background: #111; color: #fff; text-align: center; padding: 20px; }
-        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; border: 1px solid #444; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 700px; background: #222; border: 2px solid #444; }
         th, td { padding: 12px; border: 1px solid #444; text-align: left; }
         th { background: #333; color: #00ccff; }
         .ccu { color: #00ff00; font-weight: bold; }
@@ -16,17 +16,17 @@
 
     <script>
         async function updateLeaderboard() {
-            // I have typed the full proxy path here to avoid the missing slash error
-            const finalUrl = "https://api.allorigins.win" + encodeURIComponent("https://social28.bloxd.io");
+            // Using a different proxy mirror since AllOrigins is giving a 500 error
+            const bloxdApi = "https://social28.bloxd.io";
+            const proxyUrl = "https://api.codetabs.com" + encodeURIComponent(bloxdApi);
 
             try {
-                const response = await fetch(finalUrl);
-                const wrapper = await response.json();
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error("Proxy limit reached");
                 
-                // Bloxd data is inside wrapper.contents
-                const data = JSON.parse(wrapper.contents);
+                const data = await response.json();
 
-                // Sort by Players (CCU)
+                // Sort: Highest players (CCU) at the top
                 data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0));
 
                 const top10 = data.slice(0, 10);
@@ -45,8 +45,8 @@
                 document.getElementById('leaderboard').innerHTML = html;
                 
             } catch (err) {
-                console.error("Error:", err);
-                document.getElementById('leaderboard').innerHTML = "Server Busy. Retrying...";
+                console.error("Fetch Error:", err);
+                document.getElementById('leaderboard').innerHTML = "Proxy busy. Retrying in 60s...";
             }
         }
 
