@@ -3,55 +3,64 @@
 <head>
     <title>Bloxd Top 10</title>
     <style>
-        body { font-family: sans-serif; background: #222; color: white; text-align: center; }
-        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 800px; }
-        th, td { padding: 12px; border: 1px solid #444; }
-        th { background: #333; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; max-width: 800px; background: #222; }
+        th, td { padding: 12px; border: 1px solid #444; text-align: left; }
+        th { background: #333; color: #4a90e2; }
+        .ccu { color: #44ff44; font-weight: bold; }
+        .fav { color: #ffcc00; }
     </style>
 </head>
 <body>
-    <h1>Top 10 Bloxd Games</h1>
+    <h1>🏆 Bloxd.io Top 10 Games</h1>
     
-    <!-- This div MUST exist for the script to work -->
-    <div id="leaderboard">Loading...</div>
+    <div id="leaderboard">Loading Live Data...</div>
 
     <script>
         async function updateLeaderboard() {
             const apiUrl = "https://social28.bloxd.io";
-            // Fixed the URL formatting below
+            // Corrected proxy URL format
             const proxyUrl = `https://api.allorigins.win{encodeURIComponent(apiUrl)}`;
 
             try {
                 const response = await fetch(proxyUrl);
                 const wrapper = await response.json();
+                
+                // Parse the inner content from AllOrigins
                 const data = JSON.parse(wrapper.contents);
 
-                // Sort and slice
+                // Sort by CCU and take top 10
                 const top10 = data.sort((a, b) => (b.ccu || 0) - (a.ccu || 0)).slice(0, 10);
 
-                let html = `<table><tr><th>Rank</th><th>Name</th><th>CCU</th><th>Favs</th></tr>`;
-                top10.forEach((game, i) => {
-                    html += `<tr>
-                        <td>${i + 1}</td>
-                        <td>${game.name}</td>
-                        <td style="color:#4f4">${game.ccu}</td>
-                        <td style="color:#ff0">${game.totalFavorites}</td>
+                let tableHtml = `<table>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Game Name</th>
+                        <th>CCU</th>
+                        <th>Favorites</th>
                     </tr>`;
-                });
-                html += `</table>`;
 
-                // This looks for the div with id="leaderboard"
-                const element = document.getElementById('leaderboard');
-                if (element) {
-                    element.innerHTML = html;
-                }
+                top10.forEach((game, index) => {
+                    tableHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${game.name || 'Unnamed Game'}</td>
+                            <td class="ccu">${(game.ccu || 0).toLocaleString()}</td>
+                            <td class="fav">★ ${(game.totalFavorites || 0).toLocaleString()}</td>
+                        </tr>`;
+                });
+
+                tableHtml += `</table>`;
+                document.getElementById('leaderboard').innerHTML = tableHtml;
+                
             } catch (err) {
-                console.error(err);
-                document.getElementById('leaderboard').innerText = "Failed to load data.";
+                console.error("Fetch error:", err);
+                document.getElementById('leaderboard').innerHTML = "Failed to load rankings. Check back in a minute.";
             }
         }
 
         updateLeaderboard();
+        setInterval(updateLeaderboard, 60000); 
     </script>
 </body>
 </html>
